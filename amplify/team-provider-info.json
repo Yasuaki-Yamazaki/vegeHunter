@@ -10,6 +10,11 @@
             "StackName": "amplify-vegehunterfront-default-164941",
             "StackId": "arn:aws:cloudformation:ap-northeast-1:140853928293:stack/amplify-vegehunterfront-default-164941/c9fb3b10-20a1-11ea-a388-06d1721e128e",
             "AmplifyAppId": "d2r9y9wr6rt1p1"
+        },
+        "categories": {
+            "auth": {
+                "vegehunterfronta3951abd": {}
+            }
         }
     }
 }

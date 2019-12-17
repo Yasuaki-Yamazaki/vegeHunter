@@ -1,1 +1,9 @@
-{}
+{
+	"auth": {
+		"vegehunterfronta3951abd": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": []
+		}
+	}
+}
