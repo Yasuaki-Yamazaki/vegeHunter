@@ -1,0 +1,15 @@
+{
+    "default": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-vegehunterfront-default-164941-authRole",
+            "UnauthRoleArn": "arn:aws:iam::140853928293:role/amplify-vegehunterfront-default-164941-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::140853928293:role/amplify-vegehunterfront-default-164941-authRole",
+            "Region": "ap-northeast-1",
+            "DeploymentBucketName": "amplify-vegehunterfront-default-164941-deployment",
+            "UnauthRoleName": "amplify-vegehunterfront-default-164941-unauthRole",
+            "StackName": "amplify-vegehunterfront-default-164941",
+            "StackId": "arn:aws:cloudformation:ap-northeast-1:140853928293:stack/amplify-vegehunterfront-default-164941/c9fb3b10-20a1-11ea-a388-06d1721e128e",
+            "AmplifyAppId": "d2r9y9wr6rt1p1"
+        }
+    }
+}
