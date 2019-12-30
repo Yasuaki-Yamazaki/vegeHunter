@@ -30,7 +30,6 @@ export default {
             2: '位置情報が取得できませんでした。',
             3: 'タイムアウトしました。',
             }
-          console.log(error)
           this.errormsg = errorMessage[error.code]
         }.bind(this)
       )
