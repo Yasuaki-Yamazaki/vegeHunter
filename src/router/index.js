@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import SignIn from '@/components/SignIn.vue'
 import MapPoint from '@/components/MapPoint.vue'
+import Quiz from '@/components/Quiz.vue'
 
 import store from '@/store/index.js'
 
@@ -68,6 +69,12 @@ const routes = [
     path: '/mappoint',
     name: 'mappoint',
     component: MapPoint,
+    meta: { requireAuth:true }
+  },
+  {
+    path: '/quiz',
+    name: 'quiz',
+    component: Quiz,
     meta: { requireAuth:true }
   },
 ]
