@@ -39,5 +39,15 @@
         <v-list-item-title>mappoint</v-list-item-title>
       </v-list-item-content>
     </v-list-item>
+
+    <!-- Quiz -->
+    <v-list-item link to="/quiz">
+      <v-list-item-action>
+        <v-icon>games</v-icon>
+      </v-list-item-action>
+      <v-list-item-content>
+        <v-list-item-title>Quiz</v-list-item-title>
+      </v-list-item-content>
+    </v-list-item>
   </v-list>
 </template>
