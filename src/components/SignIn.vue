@@ -61,6 +61,9 @@ export default {
 .signin {
   margin: 20px;
 }
+input {
+  font-size: 16px !important;
+}
 @media screen and (max-width: 480px) {
   .signin div {
     min-width: 0;
