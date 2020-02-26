@@ -35,6 +35,12 @@
               <v-card-text>
                 ナスやトマトと同じナス科に属する野菜で、マクドナルドやファミレスで手頃に食べられる、茶色い土の中の野菜はな〜んだ？
               </v-card-text>
+              <v-btn class="mb-5" color="primary">
+                <label for="file">
+                  写真を撮る
+                  <input type="file" @change="upload" id="file" style="display:none;" accept="image/*" capture="environment">
+                </label>
+              </v-btn>
             </div>
           </v-expand-transition>
         </v-card>
@@ -72,6 +78,12 @@
               <v-card-text>
                 みんなが「花」だと思っている部分は、じつは「がく」が大きくなった、鮮やかな花で梅雨時期に色とりどりの姿で楽しませてくれる花はな〜んだ？
               </v-card-text>
+              <v-btn class="mb-5" color="primary">
+                <label for="file">
+                  写真を撮る
+                  <input type="file" @change="upload" id="file" style="display:none;" accept="image/*" capture="environment">
+                </label>
+              </v-btn>
             </div>
           </v-expand-transition>
         </v-card>
@@ -110,6 +122,12 @@
                 年中、収穫できる野菜で、ビタミンCが豊富な緑色の野菜はな〜んだ？
                 ちなみに、夏よりも冬の方が、ビタミンCが３倍多いといわれています。いろいろなビタミンの中でも、特にビタミンCは季節によってかなり変化するといわれていますが、ダントツで変化する野菜です。
               </v-card-text>
+              <v-btn class="mb-5" color="primary">
+                <label for="file">
+                  写真を撮る
+                  <input type="file" @change="upload" id="file" style="display:none;" accept="image/*" capture="environment">
+                </label>
+              </v-btn>
             </div>
           </v-expand-transition>
         </v-card>
@@ -122,6 +140,8 @@
 </template>
 
 <script>
+  import { Storage } from 'aws-amplify';
+  //import axios from 'axios'
   export default {
     data: () => ({
       quiz01: false,
@@ -129,6 +149,17 @@
       quiz03: false,
       quiz04: false,
       show: false,
+      filename: "",
     }),
+    methods: {
+      upload: async function (e) {
+        var files = e.target.files
+        var date = new Date().getTime()
+        Storage.put(date + files[0].name, files[0])
+        .then (result => {
+          this.filename = result['key']
+        }).catch(err => this.message = err)
+      },
+    }
   }
 </script>
