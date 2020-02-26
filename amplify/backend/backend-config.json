@@ -5,5 +5,11 @@
 			"providerPlugin": "awscloudformation",
 			"dependsOn": []
 		}
+	},
+	"storage": {
+		"s34673f29f": {
+			"service": "S3",
+			"providerPlugin": "awscloudformation"
+		}
 	}
 }
