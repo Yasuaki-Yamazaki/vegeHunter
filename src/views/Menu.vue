@@ -49,5 +49,16 @@
         <v-list-item-title>Quiz</v-list-item-title>
       </v-list-item-content>
     </v-list-item>
+
+    <!-- UI-Test -->
+    <v-list-item link to="/start">
+      <v-list-item-action>
+        <v-icon>play_arrow</v-icon>
+      </v-list-item-action>
+      <v-list-item-content>
+        <v-list-item-title>Start</v-list-item-title>
+      </v-list-item-content>
+    </v-list-item>
+
   </v-list>
 </template>

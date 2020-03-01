@@ -4,6 +4,9 @@ import Home from '../views/Home.vue'
 import SignIn from '@/components/SignIn.vue'
 import MapPoint from '@/components/MapPoint.vue'
 import Quiz from '@/components/Quiz.vue'
+import Start from '@/components/Start.vue'
+import Opening from '@/components/Opening.vue'
+import InGame from '@/components/InGame.vue'
 
 import store from '@/store/index.js'
 
@@ -75,6 +78,24 @@ const routes = [
     path: '/quiz',
     name: 'quiz',
     component: Quiz,
+    meta: { requireAuth:true }
+  },
+  {
+    path: '/start',
+    name: 'start',
+    component: Start,
+    meta: { requireAuth:true }
+  },
+  {
+    path: '/opening',
+    name: 'opening',
+    component: Opening,
+    meta: { requireAuth:true }
+  },
+  {
+    path: '/in-game',
+    name: 'in-game',
+    component: InGame,
     meta: { requireAuth:true }
   },
 ]

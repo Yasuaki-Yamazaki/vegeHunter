@@ -85,7 +85,7 @@
 </template>
 
 <script>
-console.log('|･`ω･)');
+
 export default {
   name: 'HelloWorld',
 
