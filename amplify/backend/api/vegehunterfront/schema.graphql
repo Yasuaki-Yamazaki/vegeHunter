@@ -1,0 +1,24 @@
+type User
+  @model
+  @auth(rules: [
+    {allow: groups, groups: ["Admin"]},
+    {allow: owner}
+  ])
+{
+  id: ID!
+  name: String!
+  phone: String
+}
+type Result
+  @model
+  @auth(rules: [
+    {allow: groups, groups: ["Admin"]},
+    {allow: private, queries: [get, list], mutations: null},
+    {allow: owner}
+  ])
+{
+  id: ID!
+  name: String!
+  scores: [Float]!
+  successes: [Int]!
+}
