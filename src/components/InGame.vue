@@ -184,7 +184,7 @@
           target: this.currentItem.answer
         },).then(response => {
           //this.result = response.data.body.Labels//解析結果をresultに格納
-          this.message = response
+          this.message = response.data.body
         }).catch(error => {
           this.result = error//エラー処理
         }).finally()//どのみちなんかやりたい場合はここに書く
