@@ -26,6 +26,9 @@
     width: 676px;
     height: 490px;
   }
+  .v-card__title {
+    justify-content: center;
+  }
   .v-content__wrap {
     overflow-x: auto;
   }
@@ -88,7 +91,7 @@
     <!-- 難易度選択 -->
     <p>むずかしさをえらんでね！</p>
     <v-row>
-      <v-col col="12">
+      <v-col cols="12">
         <v-btn color="primary" :to="{ name: 'opening', params: { level: 1 }}">
           か ん た ん
         </v-btn>
