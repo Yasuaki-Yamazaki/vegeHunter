@@ -56,6 +56,7 @@
           <div>
             <span>Status: {{ message }}</span>
           </div>
+          <!--
           <table>
               <thead>
                 <tr>
@@ -73,6 +74,7 @@
                 </tr>
               </tbody>
           </table>
+          -->
           <v-row class="text-center">
             <v-col cols="12">
               <v-btn color="primary" width="100%" max-width="300px" @click="hint1Show=true" v-if="!hint1Show">ヒント１</v-btn>
@@ -181,7 +183,8 @@
           filename: this.filename , //S3にアップロードしたファイル名
           target: this.currentItem.answer
         },).then(response => {
-          this.result = response.data.body.Labels//解析結果をresultに格納
+          //this.result = response.data.body.Labels//解析結果をresultに格納
+          this.message = response
         }).catch(error => {
           this.result = error//エラー処理
         }).finally()//どのみちなんかやりたい場合はここに書く
