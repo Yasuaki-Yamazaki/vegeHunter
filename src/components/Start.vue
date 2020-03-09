@@ -2,7 +2,7 @@
   /* Opening / Start */
   #opening-image {
     position: absolute;
-    background: url("https://e-flowerpark.com/gallery/assets_c/2016/11/2016fuyu02-thumb-800x530-3843.jpg");
+    background: url("https://e-flowerpark.com/gallery/assets_c/2015/11/fuji01-thumb-1000x662-2530.jpg");
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -17,6 +17,11 @@
     position: relative;
     color: white;
     text-shadow: 2px 2px 5px #000;
+  }
+  .select-user .v-application .primary--text,
+  .select-user .theme--light.v-label,
+  .select-user .theme--light.v-select .v-select__selections {
+    color: #fff !important;
   }
 
   /* InGame */
@@ -88,16 +93,30 @@
     <!-- タイトル -->
     <h1 class="display-2 font-weight-bold mb-3">べジハンター</h1>
 
+    <!-- ユーザー選択（デバッグ用） -->
+    <v-row class="select-user">
+      <v-col class="d-flex" sm="6" offset-sm="3">
+        <v-select
+          v-model="defaultItem"
+          :items="items"
+          label="ユーザー選択（デバッグ用）"
+          item-text="name"
+          item-value="id"
+          v-on:change="changeUser"
+        ></v-select>
+      </v-col>
+    </v-row>
+
     <!-- 難易度選択 -->
     <p>むずかしさをえらんでね！</p>
     <v-row>
       <v-col cols="12">
-        <v-btn color="primary" :to="{ name: 'opening', params: { level: 1 }}">
+        <v-btn color="primary" v-on:click="routerPush(1)">
           か ん た ん
         </v-btn>
       </v-col>
       <v-col cols="12">
-        <v-btn color="primary" :to="{ name: 'opening', params: { level: 2 }}">
+        <v-btn color="primary" v-on:click="routerPush(2)">
           むずかしい
         </v-btn>
       </v-col>
@@ -105,3 +124,46 @@
 
   </v-container>
 </template>
+
+<script>
+  import { API, graphqlOperation } from "aws-amplify"//API:AppSync用 Auth:Cognito用 graphqlOperation:AppSyncのGraphQL用
+  import { listResults } from "../graphql/queries"//AppSync取得系
+  export default {
+    data: () => ({
+      defaultItem: [],
+      items: [],
+      userDataID: null,
+      limit: 2 ** 31 - 1,
+    }),
+    created: function(){
+      // 起動時の処理
+      this.getUser();
+    },
+    methods: {
+      getUser: async function () {
+        // ユーザー取得
+        let results = await API.graphql(graphqlOperation(
+          listResults, {limit: this.limit}
+        ))
+        this.userDataID = results.data.listResults.items[0].id; // 初期値：一行目のデータのID（PK）
+        this.defaultItem = results.data.listResults.items[0];   // 初期値：一行目のデータ
+        this.items = results.data.listResults.items;
+      },
+      changeUser(id){
+        // ユーザー選択
+        this.userDataID = id;
+      },
+      routerPush(level) {
+        // ページ遷移
+        let route = { 
+          name: 'opening',
+          params: { 
+            userDataID: this.userDataID,
+            level: level
+          },
+        };
+        this.$router.push(route);
+      }
+    }
+  }
+</script>
