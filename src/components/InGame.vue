@@ -13,14 +13,14 @@
         <img src="https://e-flowerpark.com/guide/images/map.jpg" alt="ingame-map"/>
 
         <!-- クイズ選択アイコン -->
-        <div class="quiz" v-for="item in items" :key="item.id" v-bind:style="{ top: item.top + 'px', left: item.left + 'px' }">
+        <div class="quiz" v-for="(item, index) in items" :key="item.quiz" v-bind:style="{ top: item.top + 'px', left: item.left + 'px' }">
           
-          <v-btn icon v-show="!item.result" class="fuwafuwa" @click="onClickQuiz(item)">
+          <v-btn icon v-show="!item.successes" class="fuwafuwa" @click="onClickQuiz(index,item)">
             <!-- 未回答はここを表示 -->
             <img src="https://www.silhouette-illust.com/wp-content/uploads/2017/05/treasure_takarabako_30144-300x300.jpg" alt="open" />
           </v-btn>
           
-          <v-btn icon v-show="item.result" @click="onClickQuiz(item)">
+          <v-btn icon v-show="item.successes" @click="onClickQuiz(index,item)">
             <!-- 回答済はここを表示 -->
             <img src="https://www.silhouette-illust.com/wp-content/uploads/2017/05/coin_takarabako_30193-300x300.jpg" alt="close" />
           </v-btn>
@@ -31,7 +31,7 @@
       <!-- デバッグ情報 ※ゲーム本番では表示しない -->
       <span class="notice">
         Level : {{ $route.params.level }} / User : {{ userData.name }}
-        <!--<v-btn color="primary" text @click="debugDialog=true">デバッグ操作</v-btn>-->
+        <v-btn color="primary" text @click="debugDialog=true">デバッグ操作</v-btn>
       </span>
 
     </div>
@@ -39,7 +39,7 @@
     <!-- スナックバー通知 -->
     <div class="text-center ma-2">
       <v-snackbar top v-model="snackbarInfo">
-        「たからばこ」をえらんでクイズにちょうせんだ！
+        {{ snackbarText }}
         <v-btn color="pink" text @click="snackbarInfo = false">
           <v-icon>close</v-icon>
         </v-btn>
@@ -68,7 +68,13 @@
 
           <!-- 判定結果 -->
           <div>
-            <span>Status: {{ message }}</span>
+            <span v-show="judge">判定：{{this.judge}}</span>
+            <br >
+            <span>得点（精度）：{{ currentItem.scores }}</span>
+            <br >
+            <span v-show="currentItem.successes">豆知識：{{ currentItem.study }}</span>
+            <br >
+            <span>Status: {{ status }}</span>
           </div>
    
           <!-- ヒント -->
@@ -92,22 +98,21 @@
         <!-- クイズ（ダイアログ）の閉じるボタン -->
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click="quizDialog = false">とじる</v-btn>
+          <v-btn color="green darken-1" text @click="closeQuizDialog()">とじる</v-btn>
         </v-card-actions>
 
       </v-card>
     </v-dialog>
 
     <!-- デバッグ用（ダイアログ）※ゲーム本番では表示しない -->
-    <v-dialog v-model="debugDialog" persistent width="90%" max-width="600px">
+    <v-dialog v-model="debugDialog" width="90%" max-width="600px">
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
           デバッグ操作
         </v-card-title>
         <v-card-text>
-          <v-btn color="primary" text @click="displayResults()">Select</v-btn>
-          <v-btn color="primary" text @click="createResult()">Insert</v-btn>
-          <v-btn color="primary" text @click="updateResult()">Update</v-btn>
+          <v-btn color="primary" text @click="displayResults()">データ照会</v-btn>
+          <v-btn color="primary" text @click="dataReset()">データリセット (クイズの回答結果が全てクリアされます)</v-btn>
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
@@ -120,189 +125,281 @@
   </v-container>
 </template>
 
-
 <script>
-  import { Storage } from 'aws-amplify'//画像アップロードに必要なライブラリ
-  import axios from 'axios'//API叩くため
-  import { API, Auth, graphqlOperation } from "aws-amplify"//API:AppSync用 Auth:Cognito用 graphqlOperation:AppSyncのGraphQL用
-  import { createResult, updateResult } from "../graphql/mutations"//AppSync更新系
-  import { listResults, getResult } from "../graphql/queries"//AppSync取得系
-  import { onCreateResult, onUpdateResult } from "../graphql/subscriptions"//AppSyncリアルタイム取得(GraphQLのSubscriptions:WebSocket使ってる)系
-
+  import { Storage } from 'aws-amplify'                               // 画像アップロードに必要なライブラリ
+  import axios from 'axios'                                           // API叩くため
+  import { API, graphqlOperation } from "aws-amplify"                 // API:AppSync用 Auth:Cognito用 graphqlOperation:AppSyncのGraphQL用
+  import { createResult, updateResult } from "../graphql/mutations"   // AppSync更新系
+  import { listResults, getResult } from "../graphql/queries"         // AppSync取得系
   export default {
     data: () => ({
       items: "",
+      /* クイズリスト ※出題しないクイズはコメント化すること */
       quizLv1:[
-        // クイズリスト ※出題しないクイズはコメント化。
-        { id: '1' , quiz: 'lv1「Tulips」を探そう！' , answer: 'Tulips' , study:'Tulips豆知識' , hint1: '「Tulips」のヒント１'  ,  hint2: '「Tulips」のヒント２' ,  hint3: '「Tulips」のヒント３'  , top: '125' , left: '110' , result: 90 },
-        { id: '2' , quiz: 'lv1「Tomato」を探そう！' , answer: 'Tomato' , study:'Tomato豆知識' , hint1: '「Tomato」のヒント１'  ,  hint2: '「Tomato」のヒント２' ,  hint3: '「Tomato」のヒント３'  , top: '135' , left: '460' , result: null },
-        { id: '3' , quiz: 'lv1「Potato」を探そう！' , answer: 'Potato' , study:'Potato豆知識' , hint1: '「Potato」のヒント１'  ,  hint2: '「Potato」のヒント２' ,  hint3: '「Potato」のヒント３'  , top: '255' , left: '130' , result: null },
-        { id: '4' , quiz: 'lv1「Rose」を探そう！'   , answer: 'Rose'   , study:'Rose豆知識' , hint1: '「Rose」のヒント１'    ,  hint2: '「Rose」のヒント２'   ,  hint3: '「Rose」のヒント３'    , top: '335' , left: '480' , result: null },
-        { id: '5' , quiz: 'lv1「Carrot」を探そう！' , answer: 'Carrot' , study:'Carrot豆知識' , hint1: '「Carrot」のヒント１'  ,  hint2: '「Carrot」のヒント２' ,  hint3: '「Carrot」のヒント３'  , top: '415' , left: '250' , result: 80 },
+        /* かんたん */
+        { quiz: 'lv1「Tulip」を探そう！' , answer: 'Tulip' , study:'Tulipは赤色だよ' , hint1: '「Tulip」のヒント１'  ,  hint2: '「Tulip」のヒント２' ,  hint3: '「Tulip」のヒント３'  , top: '125' , left: '110' , scores: null , successes : null },
+        { quiz: 'lv1「Potato」を探そう！' , answer: 'Potato' , study:'Potatoは茶色だよ' , hint1: '「Potato」のヒント１'  ,  hint2: '「Potato」のヒント２' ,  hint3: '「Potato」のヒント３'  , top: '255' , left: '130' , scores: null , successes : null },
+        { quiz: 'lv1「Rose」を探そう！'   , answer: 'Rose'   , study:'Roseは赤色だよ' , hint1: '「Rose」のヒント１'    ,  hint2: '「Rose」のヒント２'   ,  hint3: '「Rose」のヒント３'    , top: '335' , left: '480' , scores: null , successes : null },
       ],
       quizLv2:[
-        // クイズリスト ※出題しないクイズはコメント化。
-        { id: '1' , quiz: 'lv2「Tulips」を探そう！' , answer: 'Tulips' , study:'Tulips豆知識' , hint1: '「Tulips」のヒント１'  ,  hint2: '「Tulips」のヒント２' ,  hint3: '「Tulips」のヒント３'  , top: '125' , left: '110' , result: 90 },
-        { id: '2' , quiz: 'lv2「Tomato」を探そう！' , answer: 'Tomato' , study:'Tomato豆知識' , hint1: '「Tomato」のヒント１'  ,  hint2: '「Tomato」のヒント２' ,  hint3: '「Tomato」のヒント３'  , top: '135' , left: '460' , result: 95 },
-        { id: '3' , quiz: 'lv2「Potato」を探そう！' , answer: 'Potato' , study:'Potato豆知識' , hint1: '「Potato」のヒント１'  ,  hint2: '「Potato」のヒント２' ,  hint3: '「Potato」のヒント３'  , top: '255' , left: '130' , result: 85 },
-        { id: '4' , quiz: 'lv2「Rose」を探そう！'   , answer: 'Rose'   , study:'Rose豆知識' , hint1: '「Rose」のヒント１'    ,  hint2: '「Rose」のヒント２'   ,  hint3: '「Rose」のヒント３'    , top: '335' , left: '480' , result: null },
-        { id: '5' , quiz: 'lv2「Carrot」を探そう！' , answer: 'Carrot' , study:'Carrot豆知識' , hint1: '「Carrot」のヒント１'  ,  hint2: '「Carrot」のヒント２' ,  hint3: '「Carrot」のヒント３'  , top: '415' , left: '250' , result: 80 },
+        /* むずかしい */
+        { quiz: 'lv2「Tulip」を探そう！' , answer: 'Tulip' , study:'Tulipは赤色だよ' , hint1: '「Tulip」のヒント１'  ,  hint2: '「Tulip」のヒント２' ,  hint3: '「Tulip」のヒント３'  , top: '125' , left: '110' , scores: null , successes : null },
+        { quiz: 'lv2「Tomato」を探そう！' , answer: 'Tomato' , study:'Tomatoは赤色だよ' , hint1: '「Tomato」のヒント１'  ,  hint2: '「Tomato」のヒント２' ,  hint3: '「Tomato」のヒント３'  , top: '135' , left: '460' , scores: null , successes : null },
+        { quiz: 'lv2「Potato」を探そう！' , answer: 'Potato' , study:'Potatoは茶色だよ' , hint1: '「Potato」のヒント１'  ,  hint2: '「Potato」のヒント２' ,  hint3: '「Potato」のヒント３'  , top: '255' , left: '130' , scores: null , successes : null },
+        { quiz: 'lv2「Rose」を探そう！'   , answer: 'Rose'   , study:'Roseは赤色だよ' , hint1: '「Rose」のヒント１'    ,  hint2: '「Rose」のヒント２'   ,  hint3: '「Rose」のヒント３'    , top: '335' , left: '480' , scores: null , successes : null },
+        { quiz: 'lv2「Carrot」を探そう！' , answer: 'Carrot' , study:'Carrot橙色だよ' , hint1: '「Carrot」のヒント１'  ,  hint2: '「Carrot」のヒント２' ,  hint3: '「Carrot」のヒント３'  , top: '415' , left: '250' , scores: null , successes : null },
       ],
-      snackbarInfo: false,
-      currentItem: null,
-      quizDialog: false,
-      debugDialog: false,
-      hint1Show: false,
-      hint2Show: false,
-      hint3Show: false,
-      message: null,
-      filename: null,
-      result: null,
-      userData:[],
-      limit: 2 ** 31 - 1,
+      snackbarInfo      : false,  /* スナックバー表示/非表示フラグ */
+      snackbarText      : null,   /* スナックバー通知テキスト */
+      currentItemIndex  : null,   /* 選択したクイズの配列番号（quizLv#の上から0,1,2...）*/
+      currentItem       : null,   /* 選択したクイズの配列データ */
+      quizDialog        : false,  /* クイズダイアログ表示/非表示フラグ */
+      hint1Show         : false,  /* ヒント1の表示/非表示フラグ */
+      hint2Show         : false,  /* ヒント2の表示/非表示フラグ*/
+      hint3Show         : false,  /* ヒント3の表示/非表示フラグ */
+      filename          : null,   /* アップロード画像のファイル名 */
+      status            : null,   /* 画像判定認識結果（exist,confidence） */
+      judge             : null,
+      userData          : [],     /* クイズ回答データ（ログインユーザーのデータのみ） */
+      limit             : 2 ** 31 - 1,
+      /* デバッグ用 */
+      debugDialog       : false,  /* デバッグダイアログ表示/非表示フラグ */
+
     }),
+    // 起動時の処理
     created: function(){
-      // 起動時の処理
-      this.singleResult();
+      //this.quizAllClear2ranking();  // 全問正解チェックのトリガーをどこでするか？（現在はクイズダイアログ閉じるボタンがトリガーになっている。ゴールボタンを表示した方がいいのかも？）
       this.loadQuiz();
-      this.showSnackBar();
+      this.singleResult();
+      this.showSnackbar('「たからばこ」をえらんでクイズにちょうせんだ！' , null , 2000);
+
     },
     methods: {
+      // レベル毎にクイズを分ける
       loadQuiz(){
-        // レベル毎にクイズを分ける
         if (this.$route.params.level == 1) {
           this.items = this.quizLv1;
         }else{
           this.items = this.quizLv2;
         }
+
       },
-      showSnackBar(){
-        // 案内通知
-        setTimeout(function(){
+      // クイズをクリックした時のイベント
+      onClickQuiz(index,item) {
+        this.currentItemIndex = index   
+        this.currentItem = item;
+        this.quizDialog = true;
+        this.hint1Show = false;
+        this.hint2Show = false;
+        this.hint3Show = false;
+        this.filename = null;
+        this.status = null;
+        this.judge = null;
+        document.getElementById("file").value = "";
+      },
+      // 全問正解か判定
+      quizAllClear2ranking: async function () {
+        let result = await API.graphql(graphqlOperation(
+          getResult, { id: this.$route.params.userDataID }
+        ))
+        result = result.data.getResult;
+        
+        let allClear = true;
+        for (const idx in result.successes) {
+          if ( result.successes[idx] == 0 ) {
+            allClear = false;
+            break;
+          }
+        }
+        if ( allClear ) {
+          // 全問正解 → ランキング/サンクスページへ遷移
+          let route = {
+            name: 'end-game',
+            params: {
+              userDataID: this.$route.params.userDataID
+            }
+          };
+          this.$router.push(route);
+        }
+        
+      },
+      // クイズダイアログを閉じた時のイベント
+      closeQuizDialog() {
+        this.quizDialog = false;
+        this.quizAllClear2ranking();
+      },
+      // スコア更新
+      updateResult: async function () {
+        let scores = this.userData.scores;
+        let successes = this.userData.successes;
+
+        if ( this.status.exist == 1 ){
+          // 写真判定OK
+          // ※confidenceの閾値による合否判定はとりあえず対応保留
+          if ( scores[this.currentItemIndex] < this.status.confidence ) {
+            // 前回のスコアを上回ったら上書き更新
+            scores[this.currentItemIndex] = this.status.confidence;
+          }
+
+          // 正解フラグを立てる
+          successes[this.currentItemIndex] = 1;   
+          
+          let result = { 
+            scores: scores,
+            successes: successes,
+            id: this.userData.id
+          }
+          try {
+            await API.graphql(graphqlOperation(updateResult, {input: result}));
+            this.singleResult();
+            this.judge = 'せいかい！';
+          } catch (err) {
+            this.showSnackbar('もういっかい、とってね（error:updateResult）' , err , 0);
+          }
+        }else{
+          // 写真判定NG
+          this.judge = 'ざんねん！';
+        }
+
+      },
+      // クイズと回答結果のデータマッピング
+      dataMapping: async function () {
+        let scores = this.userData.scores;
+        let successes = this.userData.successes;
+        for ( let $i=0; $i < this.items.length; $i++ ) {
+          this.items[$i].scores = scores[$i];
+          this.items[$i].successes = successes[$i];
+        }
+
+      },
+      // クイズ回答データ取得
+      singleResult: async function () {
+        let result = await API.graphql(graphqlOperation(
+          getResult, { id: this.$route.params.userDataID }
+        ))
+
+        // 初回起動時のみ実行：クイズの数分、Scores、successes列へ配列を格納しておく。
+        let scores = result.data.getResult.scores;
+        if ( !scores.length ) {
+          let initArray = new Array( this.items.length );
+          initArray.fill(0);
+          const addInitArray = {
+            scores    : initArray,
+            successes : initArray,
+            id        : result.data.getResult.id
+          }
+          try {
+            await API.graphql(graphqlOperation(updateResult, {input: addInitArray}));
+          } catch (err) {
+            this.showSnackbar('error:addInitArray' , err , 0);
+            console.log(err);
+          }
+          result = await API.graphql(graphqlOperation(
+            getResult, { id: this.$route.params.userDataID }
+          ))
+        }
+
+        this.userData = result.data.getResult;
+
+        // クイズと回答結果のデータマッピング
+        this.dataMapping();
+
+        // クイズダイアログも再読み込み
+        if ( this.currentItemIndex ) {
+          this.currentItem = this.items[this.currentItemIndex];
+        }
+
+      },
+      // 画像アップロード
+      upload: async function (e) {
+        var files = e.target.files;                  //ファイルオブジェクトを格納
+        this.status = "画像判定中...( ･`д･´)+";
+        var date = new Date().getTime();
+        Storage.put(date + files[0].name, files[0]) //ファイル名にタイムスタンプくっ付けてファイルアップロード
+        .then (result => {
+          document.getElementById("file").value = "";
+          this.filename = result['key'];
+          this.status = "uploaded:" + this.filename;
+          this.analize();
+        }).catch(err => {
+          this.showSnackbar('もういっかい、とってね（error:upload）' , err , 0);
+        })
+
+      },
+      // 画像判定
+      analize: async function () {
+        const instance = axios.create({
+          baseURL: 'https://9b8odilpwf.execute-api.ap-northeast-1.amazonaws.com'
+        })
+        instance.post('/default/photoAnalize',{
+          filename: this.filename ,
+          target: this.currentItem.answer
+        },).then(response => {
+          this.filename = null;
+          this.status = response.data.body
+          this.updateResult()
+        }).catch(err => {
+          this.showSnackbar('もういっかい、とってね（error:analize）' , err , 0);
+        })
+
+      },
+      // スナックバー通知
+      showSnackbar(text, err , showTime) {
+        setTimeout(
+          function() {
+            this.status = err;
+            this.snackbarText = text;
+            this.snackbarInfo = true;
+          }.bind(this),
+          showTime
+        );
+
+      },
+      /*-----------------------------------
+       ここから下はデバッグ用メソッド
+      -----------------------------------*/
+      displayResults: async function () {
+        // データ一覧取得（全ユーザー対象）
+        let results = await API.graphql(graphqlOperation(
+          listResults, { limit: this.limit }
+        ))
+        console.log(results.data.listResults.items);
+        this.snackbarText = 'コンソールへデータ出力しました。';
+        this.snackbarInfo = true;
+
+      },
+      dataReset: async function () {
+        // ゲームリセット（ログインユーザーのみ対象）
+        const result = { scores: [], successes: [], id: this.userData.id }
+        try {
+          await API.graphql(graphqlOperation(updateResult, {input: result}))
+          this.snackbarText = 'データをリセットしました。ホームに戻ります。';
           this.snackbarInfo = true;
-        }.bind(this), 3000);
+          setTimeout(
+            function() {
+              this.$router.push({'name':'start'});
+            }.bind(this),
+            3000
+          );
+        } catch (error) {
+          this.snackbarText = 'error:dataReset';
+          this.snackbarInfo = true;
+        }
+
       },
-      onClickQuiz(item) {
-        // クイズをクリックした時のイベント → ダイアログ表示
-        this.currentItem = item
-        this.quizDialog = true
-        this.hint1Show = false
-        this.hint2Show = false
-        this.hint3Show = false
-        this.message = ""
-        this.filename = ""
-        this.result = ""
-      },
-      setOwner: async function () {//Cognitoユーザー情報取得
-        this.user = await Auth.currentUserPoolUser(this.user)
-        this.owner = this.user.username
-      },
-      /* dev */
       createResult: async function () {
         // テストデータ作成
         // ※ゲーム本番では既にデータが入っている為、本機能はデバッグ用として使用する。
         let newName = 'unknown';
-        const result = { name: newName, scores: [0, 0, 0, 0, 0], successes: [0, 0, 0, 0, 0] }
+        const result = { name: newName, scores: [], successes: [] }
         try {
           await API.graphql(graphqlOperation(createResult, {input: result}))
         } catch (error) {
-          error
+          this.snackbarText = 'error:createResult';
+          this.snackbarInfo = true;
         }
-      },
-      updateResult: async function () {
-        //既存のResult更新
-        
-        let pk = "";
-        pk = '3dcdb5c7-c1b7-432c-ab39-dd4421aa793d'; // ベジ太郎
-        pk = '732eaae4-397a-44fd-ba3a-959e4941f3cb'; // ベジ子
-        pk = 'c175f24f-22eb-498d-aa0d-991fcefc50e2'; // ベジータ
-        pk = '7a0246fa-082e-42ea-b224-87ad9289889e'; // Mr.Vege
-        const result = { scores: [111.111, 222.222, 333.333, 444.444, 555.555], successes: [1, 0, 0, 1, 1], id: pk }
-        try {
-          this.scores = []//フォーム入力想定して、投稿するときにリセット
-          this.scores = []//↑と同じ
-          this.successes = []//↑と同じ
-          await API.graphql(graphqlOperation(updateResult, {input: result}))//Result更新API叩く
-        } catch (error) {
-          error
-        }
-      },
-      displayResults: async function () {
-        //一覧表示メソッド
-        let results = await API.graphql(graphqlOperation(//読み込み1発目の一覧取得
-          listResults, {limit: this.limit}//limit与えているが、実質的に全件取得
-        ))
-        console.log(results);
-        
-        
-        results = results.data.listResults.items//レスポンスから必要な部分抽出
-        results.forEach(result => {//合計値計算
-          result['sum'] = result['scores'].reduce((a,x) => a+=x,0)//'sum'というキーで結果に追加
-        })
-        //this.results = _.orderBy(results, 'sum', 'desc').slice(0, 100)//合計値で並び替え
-        if (!this.rank) {this.results = this.results.filter(result => result['owner'] == this.owner)}//ランクじゃなかったら、自分のResultだけ絞り込み
-        
-        API.graphql(
-          graphqlOperation(onCreateResult, {limit: this.limit, owner: this.owner})//新規作成リアルタイム取得(多分ここでWebSocketのセッション張ってるイメージ)
-        ).subscribe({
-          next: (eventData) => {
-            const result = eventData.value.data.onCreateResult//新しく追加されたResultを取得
-            const results = [...this.results, result]//現状のResult一覧に取得した新規Resultを追加
-            results.forEach(result => {//合計値計算
-              result['sum'] = result['scores'].reduce((a,x) => a+=x,0)//'sum'というキーで結果に追加
-            })
-            //this.results = _.orderBy(results, 'sum', 'desc').slice(0, 100)//合計値で並び替え
-            if (!this.rank) {this.results = this.results.filter(result => result['owner'] == this.owner)}//ランクじゃなかったら、自分のResultだけ絞り込み
-          }
-        })
-        API.graphql(
-          graphqlOperation(onUpdateResult, {limit: this.limit, owner: this.owner})//更新リアルタイム取得(多分ここでWebSocketのセッション張ってるイメージ)
-        ).subscribe({
-          next: (eventData) => {
-            const result = eventData.value.data.onUpdateResult//更新されたResultを取得
-            const results = [...this.results, result]//現状のResult一覧に取得した更新Resultを追加
-            results.forEach(result => {//合計値計算
-              result['sum'] = result['scores'].reduce((a,x) => a+=x,0)//'sum'というキーで結果に追加
-            })
-            //this.results = _.orderBy(results, 'sum', 'desc').slice(0, 100)//合計値で並び替え
-            if (!this.rank) {this.results = this.results.filter(result => result['owner'] == this.owner)}//ランクじゃなかったら、自分のResultだけ絞り込み
-            this.results = this.deduplicate(this.results)//単純に追加しちゃってるので重複排除
-          }
-        })
-      },
-      singleResult: async function () {
-        //id指定で1件取得(使ってない)
-        let result = await API.graphql(graphqlOperation(
-          getResult, { id: this.$route.params.userDataID }
-        ))
-        this.userData = result.data.getResult;
-      },
-      /* dev */
-      upload: async function (e) {
-        //ファイルアップロードメソッド
-        var files = e.target.files//ファイルオブジェクトを格納
-        var date = new Date().getTime()//タイムスタンプ取得
-        Storage.put(date + files[0].name, files[0])//タファイル名にイムスタンプくっ付けてファイルアップロード
-        .then (result => {
-          this.message = "uploaded:" + (this.filename = result['key'])//アップロード結果を表示用変数に格納
-          this.analize()//Rekognition解析のLambdaのAPIを呼ぶ
-        }).catch(err => this.message = err)//エラー処理
-      },
-      analize: async function () {
-        //Rekognition解析のLambdaのAPIを呼ぶメソッド
-        const instance = axios.create({//axiosインスタンス生成
-          baseURL: 'https://9b8odilpwf.execute-api.ap-northeast-1.amazonaws.com'//APIのベースURL設定
-        })
-        instance.post('/default/photoAnalize',{//APIのパスを設定
-          filename: this.filename , //S3にアップロードしたファイル名
-          target: this.currentItem.answer
-        },).then(response => {
-          this.message = response.data.body
-        }).catch(error => {
-          this.result = error//エラー処理
-        }).finally()//どのみちなんかやりたい場合はここに書く
-      }
-    }
 
+      },
+    }
   }
 </script>

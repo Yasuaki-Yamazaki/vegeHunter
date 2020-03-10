@@ -7,6 +7,7 @@ import Quiz from '@/components/Quiz.vue'
 import Start from '@/components/Start.vue'
 import Opening from '@/components/Opening.vue'
 import InGame from '@/components/InGame.vue'
+import EndGame from '@/components/EndGame.vue'
 
 import store from '@/store/index.js'
 
@@ -96,6 +97,12 @@ const routes = [
     path: '/in-game',
     name: 'in-game',
     component: InGame,
+    meta: { requireAuth:true }
+  },
+  {
+    path: '/end-game',
+    name: 'end-game',
+    component: EndGame,
     meta: { requireAuth:true }
   },
 ]
