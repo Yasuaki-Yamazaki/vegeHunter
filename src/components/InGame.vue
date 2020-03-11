@@ -72,6 +72,8 @@
             <br >
             <span>得点（精度）：{{ currentItem.scores }}</span>
             <br >
+            ※前回の判定結果も含めた最高得点を表示しています。
+            <br >
             <span v-show="currentItem.successes">豆知識：{{ currentItem.study }}</span>
             <br >
             <span>Status: {{ status }}</span>
