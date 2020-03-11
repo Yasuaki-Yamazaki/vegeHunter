@@ -20,7 +20,9 @@
   }
   .select-user .v-application .primary--text,
   .select-user .theme--light.v-label,
-  .select-user .theme--light.v-select .v-select__selections {
+  .select-user .theme--light.v-select .v-select__selections,
+  .select-user .theme--light.v-input:not(.v-input--is-disabled) input,
+  .select-user .theme--light.v-input:not(.v-input--is-disabled) textarea {
     color: #fff !important;
   }
 
@@ -92,14 +94,31 @@
 
     <!-- タイトル -->
     <h1 class="display-2 font-weight-bold mb-3">べジハンター</h1>
+    
+    <!-- 新規ユーザー登録 -->
+    <v-row class="select-user">
+      <v-col class="d-flex" cols="12" sm="6" offset-sm="3">
+        <v-text-field
+          v-model="userName"
+          label="①ユーザー名を入力し、新規登録をして下さい。"
+        ></v-text-field>
+      </v-col>
 
-    <!-- ユーザー選択（デバッグ用） -->
+      <v-col class="d-flex" cols="12" sm="6" offset-sm="3">
+        <v-btn
+          @click="createResult()"
+        >
+          ②新規登録
+        </v-btn>
+      </v-col>
+    </v-row>
+    
+    <!-- ユーザー選択 -->
     <v-row class="select-user">
       <v-col class="d-flex" sm="6" offset-sm="3">
         <v-select
-          v-model="defaultItem"
           :items="items"
-          label="ユーザー選択（デバッグ用）"
+          label="登録済の方：ご自身で登録したユーザーを選んで下さい"
           item-text="name"
           item-value="id"
           v-on:change="changeUser"
@@ -122,16 +141,29 @@
       </v-col>
     </v-row>
 
+    <!-- スナックバー通知 -->
+    <div class="text-center ma-2">
+      <v-snackbar top v-model="snackbarInfo">
+        {{ snackbarText }}
+        <v-btn color="pink" text @click="snackbarInfo = false">
+          <v-icon>close</v-icon>
+        </v-btn>
+      </v-snackbar>
+    </div>
+
   </v-container>
 </template>
 
 <script>
   import { API, graphqlOperation } from "aws-amplify"//API:AppSync用 Auth:Cognito用 graphqlOperation:AppSyncのGraphQL用
   import { listResults } from "../graphql/queries"//AppSync取得系
+  import { createResult } from "../graphql/mutations"   // AppSync更新系
   export default {
     data: () => ({
-      defaultItem: [],
+      snackbarInfo: false,
+      snackbarText: null,
       items: [],
+      userName: null,
       userDataID: null,
       limit: 2 ** 31 - 1,
     }),
@@ -145,13 +177,24 @@
         let results = await API.graphql(graphqlOperation(
           listResults, {limit: this.limit}
         ))
-        this.userDataID = results.data.listResults.items[0].id; // 初期値：一行目のデータのID（PK）
-        this.defaultItem = results.data.listResults.items[0];   // 初期値：一行目のデータ
         this.items = results.data.listResults.items;
       },
       changeUser(id){
         // ユーザー選択
         this.userDataID = id;
+      },
+      createResult: async function () {
+        // 新規ユーザー登録
+        const result = { name: this.userName, scores: [], successes: [] }
+        try {
+          await API.graphql(graphqlOperation(createResult, {input: result}))
+          this.getUser();
+          this.snackbarText = "ユーザー登録が完了しました。引き続きユーザーを選択して下さい。";
+          this.snackbarInfo = true;
+        } catch (error) {
+          this.snackbarInfo = true;
+        }
+
       },
       routerPush(level) {
         // ページ遷移
