@@ -104,6 +104,40 @@
       </v-card>
     </v-dialog>
 
+    <!-- インフォメーション（ダイアログ） -->
+    <v-dialog v-model="infoDialog" width="90%" max-width="600px">
+      <v-card>
+        <v-card-title class="headline grey lighten-2" primary-title>
+          ご案内（開発向け）
+        </v-card-title>
+        <v-card-text>
+          <span>
+            <br>
+            ゲーム画面左上に「デバッグ操作」ボタンを設けました。ご自由に使ってください。
+            <br><br>
+            [できること]
+            <br>
+            ●データ照会
+            <br>
+            ブラウザコンソールへ「クイズ参加者の情報＋クイズの結果」を出力します（PC推奨）。
+            <br><br>
+            ●データクリア
+            <br>
+            ログインユーザーのクイズ結果を全てクリアし、ゲームをリスタートさせます。
+            <br>
+            ※クリアされるのはログインしているユーザーのクイズ結果のみです。
+            <br><br>
+            このメッセージは本番では表示されません。
+          </span>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="infoDialog = false">閉じる</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
     <!-- デバッグ用（ダイアログ）※ゲーム本番では表示しない -->
     <v-dialog v-model="debugDialog" width="90%" max-width="600px">
       <v-card>
@@ -112,7 +146,7 @@
         </v-card-title>
         <v-card-text>
           <v-btn color="primary" text @click="displayResults()">データ照会</v-btn>
-          <v-btn color="primary" text @click="dataReset()">データリセット (クイズの回答結果が全てクリアされます)</v-btn>
+          <v-btn color="primary" text @click="dataReset()">データリセット</v-btn>
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
@@ -162,6 +196,7 @@
       judge             : null,
       userData          : [],     /* クイズ回答データ（ログインユーザーのデータのみ） */
       limit             : 2 ** 31 - 1,
+      infoDialog        : false,
       /* デバッグ用 */
       debugDialog       : false,  /* デバッグダイアログ表示/非表示フラグ */
 
@@ -172,7 +207,9 @@
       this.loadQuiz();
       this.singleResult();
       this.showSnackbar('「たからばこ」をえらんでクイズにちょうせんだ！' , null , 2000);
-
+    },
+    mounted : function(){
+      this.infoDialog = true;
     },
     methods: {
       // レベル毎にクイズを分ける
