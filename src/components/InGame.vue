@@ -110,14 +110,26 @@
     <v-dialog v-model="infoDialog" width="90%" max-width="600px">
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
-          ご案内（開発向け）
+          ご案内
         </v-card-title>
         <v-card-text>
           <span>
             <br>
+            [ゲームの流れ]
+            <br>
+            宝箱を選んでクイズに答えます。
+            <br>
+            回答後も得点アップを目指してクイズにリトライできます。
+            <br>
+            全て正解すると「ゴール」ボタンが表示されます。
+            <br >
+            ゴールボタンを押すとランキングページに遷移します。
+            <br><br>
+            [ 開発者向け ]
+            <br>
             ゲーム画面左上に「デバッグ操作」ボタンを設けました。ご自由に使ってください。
             <br><br>
-            [できること]
+            できること
             <br>
             ●データ照会
             <br>
