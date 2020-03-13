@@ -28,10 +28,10 @@
         </div>
       </div>
 
-      <!-- デバッグ情報 ※ゲーム本番では表示しない -->
       <span class="notice">
         Level : {{ $route.params.level }} / User : {{ userData.name }}
         <v-btn color="primary" text @click="debugDialog=true">デバッグ操作</v-btn>
+        <v-btn v-show="gameClear" color="primary" text @click="gotoEndGame()">ゴール</v-btn>
       </span>
 
     </div>
@@ -199,6 +199,7 @@
       userData          : [],     /* クイズ回答データ（ログインユーザーのデータのみ） */
       limit             : 2 ** 31 - 1,
       infoDialog        : false,
+      gameClear         : false,  /* クイズ全問正解で表示。ランキングページへ遷移する為のボタン */
       /* デバッグ用 */
       debugDialog       : false,  /* デバッグダイアログ表示/非表示フラグ */
 
@@ -251,16 +252,20 @@
           }
         }
         if ( allClear ) {
-          // 全問正解 → ランキング/サンクスページへ遷移
-          let route = {
-            name: 'end-game',
-            params: {
-              userDataID: this.$route.params.userDataID
-            }
-          };
-          this.$router.push(route);
+          // 全問正解 → ゴールボタン表示
+          this.gameClear = true;
         }
         
+      },
+      // 全問正解で操作可能。ランキングページ遷移
+      gotoEndGame(){
+        let route = {
+          name: 'end-game',
+          params: {
+            userDataID: this.$route.params.userDataID
+          }
+        };
+        this.$router.push(route);
       },
       // クイズダイアログを閉じた時のイベント
       closeQuizDialog() {
