@@ -13,6 +13,7 @@
 
       <span class="notice">
         <v-btn color="primary" text @click="backToHome()">ホームに戻る (クイズの回答結果が全てクリアされます)</v-btn>
+        <v-btn color="primary" text @click="backToInGame()">ゲームに戻る</v-btn>
       </span>
     </div>
     
@@ -26,15 +27,19 @@
     data: () => ({
     }),
     created: function(){
-      console.log(this.$route.params.userDataID);
     },
     methods: {
       backToHome() {
+        // ホームへ遷移
         this.dataReset();
+      },
+      backToInGame(){
+        // ゲームへ遷移
+        this.$router.push('in-game');
       },
       dataReset: async function () {
         // ゲームリセット（ログインユーザーのみ対象）
-        const result = { scores: [], successes: [], id: this.$route.params.userDataID }
+        const result = { scores: [], successes: [], id: this.$root.$userDataID }
         try {
           await API.graphql(graphqlOperation(updateResult, {input: result}))
           this.$router.push({'name':'start'});

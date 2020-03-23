@@ -22,6 +22,9 @@
     methods: {
       routerPush(){
         // ページ遷移
+        this.$router.push('in-game');
+        
+        /*
         let route = {
           name: 'in-game',
           params: {
@@ -30,6 +33,7 @@
           }
         };
         this.$router.push(route);
+        */
       }
     }
 

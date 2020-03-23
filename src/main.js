@@ -16,6 +16,10 @@ Amplify.configure(aws_exports)
 
 Vue.use(AmplifyPlugin, AmplifyModules)
 
+// ユーザーID(DB-PK)、クイズレベル格納
+Vue.prototype.$userDataID = null;
+Vue.prototype.$quizLevel = null;
+
 new Vue({
   router,
   store,

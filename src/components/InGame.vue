@@ -29,7 +29,7 @@
       </div>
 
       <span class="notice">
-        Level : {{ $route.params.level }} / User : {{ userData.name }}
+        Level : {{ $root.$quizLevel }} / User : {{ userData.name }}
         <v-btn color="primary" text @click="debugDialog=true">デバッグ操作</v-btn>
         <v-btn v-show="gameClear" color="primary" text @click="gotoEndGame()">ゴール</v-btn>
       </span>
@@ -218,7 +218,7 @@
     }),
     // 起動時の処理
     created: function(){
-      //this.quizAllClear2ranking();  // 全問正解チェックのトリガーをどこでするか？（現在はクイズダイアログ閉じるボタンがトリガーになっている。ゴールボタンを表示した方がいいのかも？）
+      this.quizAllClear2ranking();  // ゲーム全クリ判定
       this.loadQuiz();
       this.singleResult();
       this.showSnackbar('「たからばこ」をえらんでクイズにちょうせんだ！' , null , 2000);
@@ -229,7 +229,7 @@
     methods: {
       // レベル毎にクイズを分ける
       loadQuiz(){
-        if (this.$route.params.level == 1) {
+        if (this.$root.$quizLevel == 1) {
           this.items = this.quizLv1;
         }else{
           this.items = this.quizLv2;
@@ -252,7 +252,7 @@
       // 全問正解か判定
       quizAllClear2ranking: async function () {
         let result = await API.graphql(graphqlOperation(
-          getResult, { id: this.$route.params.userDataID }
+          getResult, { id: this.$root.$userDataID }
         ))
         result = result.data.getResult;
         
@@ -271,13 +271,7 @@
       },
       // 全問正解で操作可能。ランキングページ遷移
       gotoEndGame(){
-        let route = {
-          name: 'end-game',
-          params: {
-            userDataID: this.$route.params.userDataID
-          }
-        };
-        this.$router.push(route);
+        this.$router.push('end-game');
       },
       // クイズダイアログを閉じた時のイベント
       closeQuizDialog() {
@@ -331,7 +325,7 @@
       // クイズ回答データ取得
       singleResult: async function () {
         let result = await API.graphql(graphqlOperation(
-          getResult, { id: this.$route.params.userDataID }
+          getResult, { id: this.$root.$userDataID }
         ))
 
         // 初回起動時のみ実行：クイズの数分、Scores、successes列へ配列を格納しておく。
@@ -351,7 +345,7 @@
             console.log(err);
           }
           result = await API.graphql(graphqlOperation(
-            getResult, { id: this.$route.params.userDataID }
+            getResult, { id: this.$root.$userDataID }
           ))
         }
 
