@@ -132,7 +132,7 @@
     object-fit: cover;
     filter: blur(2px);
   }
-  h1,p {
+  h1,h2,p,ul {
     position: relative;
     color: white;
     text-shadow: 2px 2px 5px #000;

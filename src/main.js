@@ -19,6 +19,8 @@ Vue.use(AmplifyPlugin, AmplifyModules)
 // ユーザーID(DB-PK)、クイズレベル格納
 Vue.prototype.$userDataID = null;
 Vue.prototype.$quizLevel = null;
+Vue.prototype.$quizLv1Count = null;   // 「かんたん」のクイズ数
+Vue.prototype.$quizLv2Count = null;   // 「むずかしい」のクイズ数
 
 new Vue({
   router,

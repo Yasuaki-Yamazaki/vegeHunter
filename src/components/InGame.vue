@@ -218,6 +218,7 @@
     }),
     // 起動時の処理
     created: function(){
+      this.setQuizCount();
       this.quizAllClear2ranking();  // ゲーム全クリ判定
       this.loadQuiz();
       this.singleResult();
@@ -227,6 +228,11 @@
       this.infoDialog = true;
     },
     methods: {
+      setQuizCount(){
+        // クイズ数を覚えておく（ランキングページで使用）※無理やり感あり過ぎて申し訳m(__)m
+        this.$root.$quizLv1Count = this.quizLv1.length;
+        this.$root.$quizLv2Count = this.quizLv2.length;
+      },
       // レベル毎にクイズを分ける
       loadQuiz(){
         if (this.$root.$quizLevel == 1) {
